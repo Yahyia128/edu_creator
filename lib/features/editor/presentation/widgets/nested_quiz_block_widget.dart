@@ -95,6 +95,34 @@ class _NestedQuizBlockWidgetState
             ),
 
             const SizedBox(height: 8),
+            // بعد السطر const SizedBox(height: 8)، أضف هذا:
+DropdownButtonFormField<String>(
+  value: question['type'] ?? 'multiple_choice',
+  items: const [
+    DropdownMenuItem(value: 'multiple_choice', child: Text('Multiple Choice')),
+    DropdownMenuItem(value: 'true_false', child: Text('True/False')),
+    DropdownMenuItem(value: 'written', child: Text('Written')),
+  ],
+  onChanged: (value) {
+    setState(() {
+      question['type'] = value;
+      // إعادة تعيين الهيكل حسب النوع
+      if (value == 'true_false') {
+        question['options'] = ['True', 'False'];
+        question['correctAnswer'] = 0; // 0 = True
+      } else if (value == 'written') {
+        question['options'] = [];
+        question['correctAnswer'] = '';
+      }
+    });
+    widget.onUpdate();
+  },
+  decoration: const InputDecoration(
+    labelText: 'Question Type',
+    border: OutlineInputBorder(),
+  ),
+),
+const SizedBox(height: 12),
 
             TextField(
 
@@ -118,94 +146,53 @@ class _NestedQuizBlockWidgetState
 
             const SizedBox(height: 12),
 
-            ...List.generate(
-
-              question['options']
-                  .length,
-
-              (optionIndex) {
-
-                return RadioListTile(
-
-                  value: optionIndex,
-
-                  groupValue:
-                      question[
-                          'correctAnswer'],
-
-                  title: Row(
-
-                    children: [
-
-                      Expanded(
-
-                        child: TextField(
-
-                          decoration:
-                              InputDecoration(
-
-                            hintText:
-                                'Option ${optionIndex + 1}',
-
-                          ),
-
-                          onChanged: (value) {
-
-                            question['options']
-                                    [optionIndex] =
-                                value;
-
-                            widget.onUpdate();
-
-                          },
-
-                        ),
-
-                      ),
-
-                      if (question[
-                              'correctAnswer'] ==
-                          optionIndex)
-
-                        const Padding(
-
-                          padding:
-                              EdgeInsets.only(
-                                  left: 8),
-
-                          child: Icon(
-
-                            Icons.check_circle,
-
-                            color: Colors.green,
-
-                          ),
-
-                        ),
-
-                    ],
-
-                  ),
-
-                  onChanged: (value) {
-
-                    setState(() {
-
-                      question[
-                          'correctAnswer'] =
-                          value as int;
-
-                    });
-
-                    widget.onUpdate();
-
-                  },
-
-                );
-
-              },
-
+           // Multiple Choice Options (فقط إذا كان النوع multiple_choice)
+if (question['type'] == 'multiple_choice')
+  Column(
+    children: [
+      ...List.generate(
+        question['options'].length,
+        (optionIndex) => RadioListTile<int>(
+          value: optionIndex,
+          groupValue: question['correctAnswer'],
+          title: TextField(
+            decoration: InputDecoration(
+              hintText: 'Option ${optionIndex + 1}',
             ),
+            onChanged: (value) {
+              question['options'][optionIndex] = value;
+              widget.onUpdate();
+            },
+          ),
+          onChanged: (value) {
+            setState(() {
+              question['correctAnswer'] = value;
+            });
+            widget.onUpdate();
+          },
+        ),
+      ),
+      TextButton(
+        onPressed: () {
+          setState(() {
+            question['options'].add('New Option');
+          });
+          widget.onUpdate();
+        },
+        child: const Text('+ Add Option'),
+      ),
+    ],
+  ),
+
+// True/False (لا يحتاج خيارات)
+if (question['type'] == 'true_false')
+  const Text('True/False: User will see True/False options',
+             style: TextStyle(color: Colors.grey)),
+
+// Written (لا يحتاج خيارات)
+if (question['type'] == 'written')
+  const Text('Written: User will type their answer',
+             style: TextStyle(color: Colors.grey)),
 
           ],
 
